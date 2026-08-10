@@ -12,6 +12,7 @@ import { Tooltip } from "@excalimove/excalimove/components/Tooltip";
 import {
   ANIMATABLE_PROPERTIES,
   PROPERTY_LABELS,
+  createEmptyProperties,
   type AnimatableProperty,
   type Keyframe,
 } from "../../animation/types";
@@ -162,9 +163,13 @@ const PropertyTrack = ({
               })}
               title={`${PROPERTY_LABELS[property]} @ ${(
                 keyframe.timeMs / 1000
-              ).toFixed(1)}s = ${Math.round(keyframe.value)}${
-                !deletable ? " (base keyframe)" : ""
-              }`}
+              ).toFixed(1)}s = ${
+                property === "angle"
+                  ? `${Math.round((keyframe.value * 180) / Math.PI)}°`
+                  : property === "opacity"
+                  ? `${Math.round(keyframe.value)}%`
+                  : Math.round(keyframe.value * 100) / 100
+              }${!deletable ? " (base keyframe)" : ""}`}
               style={{ left: `${leftPercent}%` }}
               data-selected={isSelected ? "true" : undefined}
               onPointerDown={(event) => {
@@ -191,7 +196,7 @@ export const ElementTimeline = ({
   onPlayPause,
   onSeek,
   onScrubbingChange,
-  keyframesByProperty = { x: [], y: [] },
+  keyframesByProperty = createEmptyProperties(),
   selectedKeyframe,
   onSelectKeyframe,
   onDeleteSelectedKeyframe,
@@ -272,8 +277,8 @@ export const ElementTimeline = ({
             {getElementLabel(element)}
           </span>
           <span className="animation-timeline__element-hint">
-            Move element to add a keyframe at the playhead · Delete removes
-            selected
+            Edit properties on canvas to keyframe at the playhead · Delete
+            removes selected
           </span>
         </div>
         <Tooltip label="Delete selected keyframe">

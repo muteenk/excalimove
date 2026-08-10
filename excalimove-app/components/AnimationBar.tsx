@@ -20,7 +20,9 @@ import {
 import { Tooltip } from "@excalimove/excalimove/components/Tooltip";
 
 import {
-  ANIMATION_BAR_EXPANDED_HEIGHT_PX,
+  ANIMATION_BAR_DEFAULT_HEIGHT_PX,
+  ANIMATION_BAR_MIN_HEIGHT_PX,
+  clampAnimationBarHeight,
   TIMELINE_DURATION_MS,
 } from "../animation/constants";
 import { useAtom } from "../app-jotai";
@@ -28,9 +30,11 @@ import { animationTracksAtom } from "../animation/atoms";
 import { applyTracksToScene } from "../animation/applyTracks";
 import {
   recordPoseEdit,
+  readElementPose,
   removeKeyframeFromTrack,
-  type Pose2D,
+  type ElementPose,
 } from "../animation/keyframes";
+import { createEmptyProperties } from "../animation/types";
 
 import {
   ElementTimeline,
@@ -40,7 +44,10 @@ import {
 import "./AnimationBar.scss";
 
 const AnimationBar = () => {
-  const [isOpen, setIsOpen] = useState(true);
+  const [heightPx, setHeightPx] = useState(() =>
+    clampAnimationBarHeight(ANIMATION_BAR_DEFAULT_HEIGHT_PX),
+  );
+  const [isResizing, setIsResizing] = useState(false);
   const [currentTimeMs, setCurrentTimeMs] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isScrubbing, setIsScrubbing] = useState(false);
@@ -53,8 +60,12 @@ const AnimationBar = () => {
   const isPlayingRef = useRef(isPlaying);
   const isScrubbingRef = useRef(isScrubbing);
   const isApplyingAnimationRef = useRef(false);
-  const poseSnapshotRef = useRef<Map<string, Pose2D>>(new Map());
+  const poseSnapshotRef = useRef<Map<string, ElementPose>>(new Map());
   const tracksRef = useRef(tracks);
+  const heightPxRef = useRef(heightPx);
+  const restoredHeightRef = useRef(
+    clampAnimationBarHeight(ANIMATION_BAR_DEFAULT_HEIGHT_PX),
+  );
 
   const excalidrawAPI = useExcalidrawAPI();
   const selectedElementIds = useExcalidrawStateValue("selectedElementIds");
@@ -63,8 +74,9 @@ const AnimationBar = () => {
   isPlayingRef.current = isPlaying;
   isScrubbingRef.current = isScrubbing;
   tracksRef.current = tracks;
+  heightPxRef.current = heightPx;
 
-  const offsetPx = isOpen ? ANIMATION_BAR_EXPANDED_HEIGHT_PX : 0;
+  const isCompact = heightPx <= ANIMATION_BAR_MIN_HEIGHT_PX + 1;
 
   const selectedElement = useMemo(() => {
     const ids = Object.keys(selectedElementIds ?? {});
@@ -99,6 +111,18 @@ const AnimationBar = () => {
     setSelectedKeyframe(null);
   }, [selectedElement?.id]);
 
+  // Keep height valid when the viewport changes.
+  useEffect(() => {
+    const onResize = () => {
+      setHeightPx((current) => clampAnimationBarHeight(current));
+      restoredHeightRef.current = clampAnimationBarHeight(
+        restoredHeightRef.current,
+      );
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
   const applyAnimationAtTime = useCallback(
     (timeMs: number) => {
       if (!excalidrawAPI || excalidrawAPI.isDestroyed) {
@@ -132,9 +156,9 @@ const AnimationBar = () => {
     }
 
     const syncSnapshots = () => {
-      const next = new Map<string, Pose2D>();
+      const next = new Map<string, ElementPose>();
       for (const element of excalidrawAPI.getSceneElements()) {
-        next.set(element.id, { x: element.x, y: element.y });
+        next.set(element.id, readElementPose(element));
       }
       poseSnapshotRef.current = next;
     };
@@ -171,7 +195,7 @@ const AnimationBar = () => {
       }
 
       const prev = poseSnapshotRef.current.get(elementId);
-      const next: Pose2D = { x: element.x, y: element.y };
+      const next = readElementPose(element);
 
       if (prev) {
         setTracks((currentTracks) => {
@@ -237,6 +261,58 @@ const AnimationBar = () => {
     setSelectedKeyframe(null);
   }, [selectedElement, selectedKeyframe, setTracks]);
 
+  const onToggleCompact = useCallback(() => {
+    setHeightPx((current) => {
+      if (current <= ANIMATION_BAR_MIN_HEIGHT_PX + 1) {
+        return clampAnimationBarHeight(restoredHeightRef.current);
+      }
+      restoredHeightRef.current = current;
+      return ANIMATION_BAR_MIN_HEIGHT_PX;
+    });
+  }, []);
+
+  const onResizePointerDown = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (event.button !== 0) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+
+      const handle = event.currentTarget;
+      const pointerId = event.pointerId;
+      const startY = event.clientY;
+      const startHeight = heightPxRef.current;
+
+      handle.setPointerCapture(pointerId);
+      setIsResizing(true);
+
+      const onPointerMove = (moveEvent: PointerEvent) => {
+        // Dragging up increases height (bar grows from the bottom).
+        const nextHeight = clampAnimationBarHeight(
+          startHeight + (startY - moveEvent.clientY),
+        );
+        setHeightPx(nextHeight);
+        if (nextHeight > ANIMATION_BAR_MIN_HEIGHT_PX + 1) {
+          restoredHeightRef.current = nextHeight;
+        }
+      };
+
+      const onPointerUp = () => {
+        handle.releasePointerCapture(pointerId);
+        handle.removeEventListener("pointermove", onPointerMove);
+        handle.removeEventListener("pointerup", onPointerUp);
+        handle.removeEventListener("pointercancel", onPointerUp);
+        setIsResizing(false);
+      };
+
+      handle.addEventListener("pointermove", onPointerMove);
+      handle.addEventListener("pointerup", onPointerUp);
+      handle.addEventListener("pointercancel", onPointerUp);
+    },
+    [],
+  );
+
   useEffect(() => {
     if (!isPlaying) {
       return;
@@ -274,45 +350,59 @@ const AnimationBar = () => {
       return;
     }
 
-    excalidraw.style.setProperty("--animation-bar-offset", `${offsetPx}px`);
+    excalidraw.style.setProperty("--animation-bar-offset", `${heightPx}px`);
+    if (isResizing) {
+      excalidraw.style.setProperty("--animation-bar-offset-transition", "none");
+    } else {
+      excalidraw.style.removeProperty("--animation-bar-offset-transition");
+    }
 
     return () => {
       excalidraw.style.removeProperty("--animation-bar-offset");
+      excalidraw.style.removeProperty("--animation-bar-offset-transition");
     };
-  }, [offsetPx]);
+  }, [heightPx, isResizing]);
 
   const keyframesByProperty = selectedElement
-    ? tracks[selectedElement.id]?.properties ?? { x: [], y: [] }
-    : { x: [], y: [] };
+    ? tracks[selectedElement.id]?.properties ?? createEmptyProperties()
+    : createEmptyProperties();
 
   return (
     <>
       <FooterRight>
         <Tooltip
-          label={isOpen ? "Collapse animation bar" : "Expand animation bar"}
+          label={isCompact ? "Expand animation bar" : "Compact animation bar"}
         >
           <button
             type="button"
             className="animation-bar__toggle help-icon"
-            aria-expanded={isOpen}
+            aria-expanded={!isCompact}
             aria-label={
-              isOpen ? "Collapse animation bar" : "Expand animation bar"
+              isCompact ? "Expand animation bar" : "Compact animation bar"
             }
-            onClick={() => setIsOpen((open) => !open)}
+            onClick={onToggleCompact}
           >
-            {isOpen ? collapseDownIcon : collapseUpIcon}
+            {isCompact ? collapseUpIcon : collapseDownIcon}
           </button>
         </Tooltip>
       </FooterRight>
       <div
         ref={rootRef}
         className={clsx("animation-bar", {
-          "animation-bar--open": isOpen,
+          "animation-bar--resizing": isResizing,
         })}
-        style={{ height: offsetPx }}
-        data-viewport-ui={isOpen ? "bottom" : undefined}
-        aria-hidden={!isOpen}
+        style={{ height: heightPx }}
+        data-viewport-ui="bottom"
       >
+        <div
+          className="animation-bar__resize-handle"
+          role="separator"
+          aria-orientation="horizontal"
+          aria-valuemin={ANIMATION_BAR_MIN_HEIGHT_PX}
+          aria-valuenow={heightPx}
+          aria-label="Resize animation bar"
+          onPointerDown={onResizePointerDown}
+        />
         <div className="animation-bar__panel">
           {selectionState === "single" && selectedElement ? (
             <ElementTimeline

@@ -11,4 +11,26 @@ export const unitIndexToTimeMs = (unitIndex: number) =>
 
 export const timeMsToUnitIndex = (timeMs: number) => timeMs / TIMELINE_UNIT_MS;
 
-export const ANIMATION_BAR_EXPANDED_HEIGHT_PX = 220;
+/** Compact chrome: header + resize handle. */
+export const ANIMATION_BAR_MIN_HEIGHT_PX = 72;
+
+/** Soft ceiling; also clamped to a fraction of the viewport. */
+export const ANIMATION_BAR_MAX_HEIGHT_PX = 560;
+
+export const ANIMATION_BAR_DEFAULT_HEIGHT_PX = 240;
+
+export const ANIMATION_BAR_MAX_VIEWPORT_RATIO = 0.55;
+
+export const clampAnimationBarHeight = (
+  heightPx: number,
+  viewportHeight = typeof window !== "undefined" ? window.innerHeight : 800,
+) => {
+  const maxHeight = Math.min(
+    ANIMATION_BAR_MAX_HEIGHT_PX,
+    Math.floor(viewportHeight * ANIMATION_BAR_MAX_VIEWPORT_RATIO),
+  );
+  return Math.min(
+    maxHeight,
+    Math.max(ANIMATION_BAR_MIN_HEIGHT_PX, Math.round(heightPx)),
+  );
+};

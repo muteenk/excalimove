@@ -8,12 +8,51 @@
     flex-direction: column;
     align-items: stretch;
     pointer-events: none;
-    transition: height 0.25s ease;
+    transition: height 0.2s ease;
     box-sizing: border-box;
     overflow: hidden;
 
+    &--resizing {
+      transition: none;
+    }
+
+    &__resize-handle {
+      pointer-events: var(--ui-pointerEvents);
+      position: relative;
+      flex: 0 0 0.5rem;
+      margin-top: -0.15rem;
+      cursor: ns-resize;
+      touch-action: none;
+      z-index: 2;
+
+      &::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 2.25rem;
+        height: 0.2rem;
+        transform: translate(-50%, -50%);
+        border-radius: 999px;
+        background: var(--default-border-color);
+        opacity: 0.85;
+      }
+
+      &::after {
+        content: "";
+        position: absolute;
+        inset: -0.35rem 0;
+      }
+
+      &:hover::before,
+      &:active::before {
+        background: var(--color-primary);
+        opacity: 1;
+      }
+    }
+
     &__panel {
-      pointer-events: none;
+      pointer-events: var(--ui-pointerEvents);
       flex: 1;
       min-height: 0;
       display: flex;
@@ -22,15 +61,8 @@
       border-top: 1px solid var(--default-border-color);
       box-shadow: var(--shadow-island);
       overflow: hidden;
-      opacity: 0;
-      transition: opacity 0.2s ease;
       color: var(--text-primary-color);
       font-family: var(--ui-font);
-    }
-
-    &--open .animation-bar__panel {
-      pointer-events: var(--ui-pointerEvents);
-      opacity: 1;
     }
 
     &__empty {

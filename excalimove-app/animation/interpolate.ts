@@ -4,7 +4,7 @@ import {
   type Keyframe,
 } from "./types";
 
-import { sortKeyframes, type Pose2D } from "./keyframes";
+import { sortKeyframes, type ElementPose } from "./keyframes";
 
 /**
  * Linear interpolation between neighboring keyframes.
@@ -49,8 +49,8 @@ export const interpolateProperty = (
 export const interpolatePose = (
   track: ElementTrack,
   timeMs: number,
-): Partial<Pose2D> => {
-  const pose: Partial<Pose2D> = {};
+): Partial<ElementPose> => {
+  const pose: Partial<ElementPose> = {};
 
   for (const property of ANIMATABLE_PROPERTIES) {
     const value = interpolateProperty(track.properties[property], timeMs);

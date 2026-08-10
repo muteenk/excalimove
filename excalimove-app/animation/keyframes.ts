@@ -1,5 +1,7 @@
 import {
   ANIMATABLE_PROPERTIES,
+  createEmptyProperties,
+  trackHasKeyframes,
   type AnimatableProperty,
   type ElementTrack,
   type Keyframe,
@@ -7,10 +9,7 @@ import {
 
 export const createEmptyTrack = (elementId: string): ElementTrack => ({
   elementId,
-  properties: {
-    x: [],
-    y: [],
-  },
+  properties: createEmptyProperties(),
 });
 
 export const sortKeyframes = (keyframes: readonly Keyframe[]): Keyframe[] =>
@@ -58,10 +57,41 @@ export const canDeleteKeyframe = (
   return true;
 };
 
-export type Pose2D = { x: number; y: number };
+export type ElementPose = Record<AnimatableProperty, number>;
+
+/** @deprecated Use ElementPose */
+export type Pose2D = ElementPose;
+
+export const readElementPose = (element: {
+  x: number;
+  y: number;
+  opacity: number;
+  angle: number;
+  width: number;
+  height: number;
+  strokeWidth: number;
+}): ElementPose => ({
+  x: element.x,
+  y: element.y,
+  opacity: element.opacity,
+  angle: element.angle,
+  width: element.width,
+  height: element.height,
+  strokeWidth: element.strokeWidth,
+});
+
+const cloneProperties = (
+  properties: ElementTrack["properties"],
+): ElementTrack["properties"] => {
+  const next = createEmptyProperties();
+  for (const property of ANIMATABLE_PROPERTIES) {
+    next[property] = [...properties[property]];
+  }
+  return next;
+};
 
 /**
- * Apply a user-driven x/y edit at the playhead.
+ * Apply a user-driven property edit at the playhead.
  * Seeds t=0 from the previous pose when animation data is first created.
  */
 export const recordPoseEdit = ({
@@ -74,8 +104,8 @@ export const recordPoseEdit = ({
   track: ElementTrack | undefined;
   elementId: string;
   timeMs: number;
-  prev: Pose2D;
-  next: Pose2D;
+  prev: ElementPose;
+  next: ElementPose;
 }): ElementTrack | null => {
   const changed = ANIMATABLE_PROPERTIES.filter(
     (property) => prev[property] !== next[property],
@@ -86,22 +116,19 @@ export const recordPoseEdit = ({
   }
 
   const normalizedTime = Math.max(0, Math.round(timeMs));
-  let properties: ElementTrack["properties"] = track
-    ? {
-        x: [...track.properties.x],
-        y: [...track.properties.y],
-      }
-    : { x: [], y: [] };
+  const properties = track
+    ? cloneProperties(track.properties)
+    : createEmptyProperties();
 
-  const isFirstAnimation =
-    properties.x.length === 0 && properties.y.length === 0;
+  const isFirstAnimation = !ANIMATABLE_PROPERTIES.some(
+    (property) => properties[property].length > 0,
+  );
 
   if (isFirstAnimation) {
-    // Seed base pose from values before this edit.
-    properties = {
-      x: [{ timeMs: 0, value: prev.x }],
-      y: [{ timeMs: 0, value: prev.y }],
-    };
+    // Seed base pose from values before this edit (changed props only).
+    for (const property of changed) {
+      properties[property] = [{ timeMs: 0, value: prev[property] }];
+    }
   }
 
   for (const property of changed) {
@@ -134,13 +161,11 @@ export const removeKeyframeFromTrack = (
     [property]: nextKeyframes,
   };
 
-  const hasAny = ANIMATABLE_PROPERTIES.some(
-    (prop) => properties[prop].length > 0,
-  );
-
-  if (!hasAny) {
+  if (!ANIMATABLE_PROPERTIES.some((prop) => properties[prop].length > 0)) {
     return createEmptyTrack(track.elementId);
   }
 
   return { elementId: track.elementId, properties };
 };
+
+export { trackHasKeyframes };

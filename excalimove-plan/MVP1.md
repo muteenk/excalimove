@@ -36,15 +36,19 @@ Let users animate the **position** (`x`, `y`) of canvas elements on a fixed time
 
 ### Properties (MVP 1)
 
-| Property | In MVP 1 | Notes |
-| --- | --- | --- |
-| `x` | Yes | Element field |
-| `y` | Yes | Element field |
-| scale | No | Defer; Excalidraw uses `width`/`height`, not a single scale |
-| rotation (`angle`) | No | Follow-up |
-| opacity | No | Follow-up |
+| Property      | In MVP 1 | Notes                   |
+| ------------- | -------- | ----------------------- |
+| `x`           | Yes      | Element field           |
+| `y`           | Yes      | Element field           |
+| `opacity`     | Yes      | 0–100; clamped on apply |
+| `angle`       | Yes      | Radians; linear lerp    |
+| `width`       | Yes      | Min 1 on apply          |
+| `height`      | Yes      | Min 1 on apply          |
+| `strokeWidth` | Yes      | Min 0.1 on apply        |
 
 Each property row is a long timeline line (30 units) with keyframe markers.
+
+Medium/complex properties (scale, colors, paths, text, bindings, easing, …) are tracked in [`MVP2.md`](./MVP2.md).
 
 ### Transport
 
