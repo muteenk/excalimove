@@ -35,4 +35,4 @@ bun run fix             # Auto-fix formatting and linting issues
 
 ### License
 
-MIT — see `LICENSE` and `NOTICE`. Retain Excalidraw copyright attribution.
+Proprietary for Excalimove additions — see `LICENSE` and `NOTICE`. Always retain Excalidraw MIT attribution in `NOTICE`.

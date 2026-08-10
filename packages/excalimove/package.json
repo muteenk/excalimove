@@ -39,7 +39,7 @@
     "access": "public"
   },
   "description": "Excalidraw as a React component",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "keywords": [
     "excalidraw",
     "excalidraw-embed",

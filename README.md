@@ -1,6 +1,6 @@
 # Excalimove
 
-Excalimove is an open-source whiteboard with **keyframe / timeline animation** for canvas elements. It is a fork of [Excalidraw](https://github.com/excalidraw/excalidraw) (MIT).
+Excalimove is a whiteboard with **keyframe / timeline animation** for canvas elements. It is a proprietary fork of [Excalidraw](https://github.com/excalidraw/excalidraw).
 
 ## Features
 
@@ -25,9 +25,9 @@ bun run test:typecheck
 bun run build
 ```
 
-## Attribution
+## License
 
-See [NOTICE](./NOTICE) and [LICENSE](./LICENSE). Excalimove retains the original Excalidraw MIT copyright and is not an official Excalidraw product.
+Proprietary — see [LICENSE](./LICENSE). Upstream Excalidraw portions remain MIT; see [NOTICE](./NOTICE). Not an official Excalidraw product.
 
 ## Plan
 

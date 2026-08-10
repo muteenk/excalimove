@@ -32,7 +32,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "license": "MIT",
+  "license": "UNLICENSED",
   "keywords": [
     "excalidraw",
     "excalidraw-utils"

@@ -93,5 +93,6 @@
   },
   "overrides": {
     "strip-ansi": "6.0.1"
-  }
+  },
+  "license": "UNLICENSED"
 }

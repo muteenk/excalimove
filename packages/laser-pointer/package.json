@@ -23,7 +23,7 @@
   ],
   "bugs": "https://github.com/excalidraw/excalidraw/issues",
   "repository": "https://github.com/excalidraw/excalidraw",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "publishConfig": {
     "access": "public"
   },
