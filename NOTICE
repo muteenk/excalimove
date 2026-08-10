@@ -1,0 +1,11 @@
+# NOTICE
+
+Excalimove is a fork of [Excalidraw](https://github.com/excalidraw/excalidraw).
+
+The original Excalidraw editor and related packages are Copyright (c) 2020
+Excalidraw and are licensed under the MIT License. See the root `LICENSE` file.
+
+Excalimove modifications (including timeline/keyframe animation features) are
+Copyright (c) 2026 Excalimove contributors, also under the MIT License.
+
+This product is not affiliated with or endorsed by Excalidraw.

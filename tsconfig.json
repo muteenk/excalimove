@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    "rootDir": "./",
+    "target": "ESNext",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "types": ["vitest/globals", "@testing-library/jest-dom"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@excalimove/common": ["./packages/common/src/index.ts"],
+      "@excalimove/common/*": ["./packages/common/src/*"],
+      "@excalimove/excalimove": ["./packages/excalimove/index.tsx"],
+      "@excalimove/excalimove/*": ["./packages/excalimove/*"],
+      "@excalimove/element": ["./packages/element/src/index.ts"],
+      "@excalimove/element/*": ["./packages/element/src/*"],
+      "@excalimove/fractional-indexing": ["./packages/fractional-indexing/src/index.ts"],
+      "@excalimove/fractional-indexing/*": ["./packages/fractional-indexing/src/*"],
+      "@excalimove/laser-pointer": ["./packages/laser-pointer/src/index.ts"],
+      "@excalimove/laser-pointer/*": ["./packages/laser-pointer/src/*"],
+      "@excalimove/math": ["./packages/math/src/index.ts"],
+      "@excalimove/math/*": ["./packages/math/src/*"],
+      "@excalimove/utils": ["./packages/utils/src/index.ts"],
+      "@excalimove/utils/*": ["./packages/utils/src/*"]
+    }
+  },
+  "include": ["packages", "excalimove-app"],
+  "exclude": ["examples", "dist", "types", "tests"]
+}

@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "strict": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "allowSyntheticDefaultImports": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "jsx": "react-jsx",
+    "emitDeclarationOnly": true,
+    "paths": {
+      "@excalimove/common": ["./common/src/index.ts"],
+      "@excalimove/common/*": ["./common/src/*"],
+      "@excalimove/element": ["./element/src/index.ts"],
+      "@excalimove/element/*": ["./element/src/*"],
+      "@excalimove/excalimove": ["./excalidraw/index.tsx"],
+      "@excalimove/excalimove/*": ["./excalidraw/*"],
+      "@excalimove/laser-pointer": ["./laser-pointer/src/index.ts"],
+      "@excalimove/laser-pointer/*": ["./laser-pointer/src/*"],
+      "@excalimove/math": ["./math/src/index.ts"],
+      "@excalimove/math/*": ["./math/src/*"],
+      "@excalimove/utils": ["./utils/src/index.ts"],
+      "@excalimove/utils/*": ["./utils/src/*"],
+      "@excalimove/fractional-indexing": ["./fractional-indexing/src/index.ts"],
+      "@excalimove/fractional-indexing/*": ["./fractional-indexing/src/*"]
+    }
+  }
+}

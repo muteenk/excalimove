@@ -1,0 +1,13 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+# GUI git / IDE commits often lack interactive-shell PATH
+export PATH="$HOME/.bun/bin:/usr/local/bin:$PATH"
+if command -v bunx >/dev/null 2>&1; then
+  bunx lint-staged
+elif command -v bun >/dev/null 2>&1; then
+  bun x lint-staged
+else
+  echo "husky - bun not found; install Bun or add it to PATH" >&2
+  exit 1
+fi
+

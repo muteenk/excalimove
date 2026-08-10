@@ -1,0 +1,3 @@
+[install]
+# Match Yarn classic node_modules layout for TS types and tooling
+linker = "hoisted"

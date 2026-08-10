@@ -1,0 +1,93 @@
+.excalidraw {
+  .ExcalimoveLogo {
+    --logo-icon--mobile: 1rem;
+    --logo-text--mobile: 0.75rem;
+
+    --logo-icon--xs: 2rem;
+    --logo-text--xs: 1.5rem;
+
+    --logo-icon--small: 2.5rem;
+    --logo-text--small: 1.75rem;
+
+    --logo-icon--normal: 3rem;
+    --logo-text--normal: 2.2rem;
+
+    --logo-icon--large: 90px;
+    --logo-text--large: 65px;
+
+    display: flex;
+    align-items: center;
+
+    svg {
+      flex: 0 0 auto;
+    }
+
+    .ExcalimoveLogo-icon {
+      width: auto;
+      color: var(--color-logo-icon);
+    }
+
+    .ExcalimoveLogo-text {
+      margin-left: 0.75rem;
+      width: auto;
+      color: var(--color-logo-text);
+      font-family: var(--ui-font);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    &.is-mobile {
+      .ExcalimoveLogo-icon {
+        height: var(--logo-icon--mobile);
+      }
+
+      .ExcalimoveLogo-text {
+        font-size: var(--logo-text--mobile);
+        margin-left: 0.5rem;
+      }
+    }
+
+    &.is-xs {
+      .ExcalimoveLogo-icon {
+        height: var(--logo-icon--xs);
+      }
+
+      .ExcalimoveLogo-text {
+        font-size: var(--logo-text--xs);
+      }
+    }
+
+    &.is-small {
+      .ExcalimoveLogo-icon {
+        height: var(--logo-icon--small);
+      }
+
+      .ExcalimoveLogo-text {
+        font-size: var(--logo-text--small);
+      }
+    }
+
+    &.is-normal {
+      .ExcalimoveLogo-icon {
+        height: var(--logo-icon--normal);
+      }
+
+      .ExcalimoveLogo-text {
+        font-size: var(--logo-text--normal);
+      }
+    }
+
+    &.is-large {
+      .ExcalimoveLogo-icon {
+        height: var(--logo-icon--large);
+      }
+
+      .ExcalimoveLogo-text {
+        font-size: var(--logo-text--large);
+      }
+    }
+  }
+}

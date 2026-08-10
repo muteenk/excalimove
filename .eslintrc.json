@@ -1,0 +1,50 @@
+{
+  "extends": ["@excalidraw/eslint-config", "react-app"],
+  "rules": {
+    "import/order": "off",
+    "import/no-anonymous-default-export": "off",
+    "no-restricted-globals": "off",
+    "@typescript-eslint/consistent-type-imports": [
+      "error",
+      {
+        "prefer": "type-imports",
+        "disallowTypeAnnotations": false,
+        "fixStyle": "separate-type-imports"
+      }
+    ],
+    "no-restricted-imports": [
+      "error",
+      {
+        "name": "jotai",
+        "message": "Do not import from \"jotai\" directly. Use our app-specific modules (\"editor-jotai\" or \"app-jotai\")."
+      }
+    ],
+    "react/jsx-no-target-blank": [
+      "error",
+      {
+        "allowReferrer": true
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["packages/excalimove/**/*.{ts,tsx}"],
+      "excludedFiles": ["packages/excalimove/**/*.test.{ts,tsx}", "packages/excalimove/**/*.test.*.{ts,tsx}"],
+      "rules": {
+        "@typescript-eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@excalimove/excalimove"],
+                "message": "Do not import from the barrel 'index.tsx' files. Use direct relative imports to the specific module instead.",
+                "allowTypeImports": true
+              }
+            ],
+            "paths": [".", "..", "../..", "../../..", "../../../..", "../../../../..", "../index", "../../index", "../../../index", "../../../../index"]
+          }
+        ]
+      }
+    }
+  ]
+}
