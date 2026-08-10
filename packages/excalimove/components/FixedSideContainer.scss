@@ -14,7 +14,12 @@
     left: var(--editor-container-padding);
     top: var(--editor-container-padding);
     right: var(--editor-container-padding);
-    bottom: var(--editor-container-padding);
+    // Stay above the animation bar so the left styles rail / top UI never
+    // collide with timeline chrome (including when the bar is compact).
+    bottom: calc(
+      var(--editor-container-padding) + var(--animation-bar-offset, 0px)
+    );
+    transition: var(--animation-bar-offset-transition);
   }
 
   .FixedSideContainer_side_top.zen-mode {

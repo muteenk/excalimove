@@ -68,7 +68,9 @@
     .disable-zen-mode {
       padding: 10px;
       position: absolute;
-      bottom: var(--animation-bar-offset, 0px);
+      // Footer (.App-menu_bottom) already clears the animation bar; don't
+      // re-apply --animation-bar-offset or the button floats above the footer.
+      bottom: 0;
       [dir="ltr"] & {
         right: 1rem;
       }
@@ -77,8 +79,7 @@
       }
       opacity: 0;
       visibility: hidden;
-      transition: visibility 0s linear 0s, opacity 0.5s,
-        var(--animation-bar-offset-transition);
+      transition: visibility 0s linear 0s, opacity 0.5s;
 
       font-family: var(--ui-font);
       font-size: 0.75rem;
@@ -100,8 +101,7 @@
       &--visible {
         opacity: 1;
         visibility: visible;
-        transition: visibility 0s linear 300ms, opacity 0.5s,
-          var(--animation-bar-offset-transition);
+        transition: visibility 0s linear 300ms, opacity 0.5s;
         transition-delay: 0.8s;
 
         pointer-events: var(--ui-pointerEvents);
@@ -119,6 +119,7 @@
     .layer-ui__wrapper__footer-right {
       margin-top: auto;
       margin-bottom: auto;
+      margin-inline-start: auto;
     }
 
     .layer-ui__wrapper__footer-right-actions {
@@ -134,6 +135,7 @@
   // below the compact actions menu (see LayerUI.tsx)
   .App-menu_top__left > .ToolIcon__penMode {
     justify-self: center;
+    flex: 0 0 auto;
 
     .ToolIcon__icon {
       width: var(--lg-button-size);
@@ -145,6 +147,20 @@
     // no shadow while pen mode is active (the active fill is enough)
     &.ToolIcon--checked .ToolIcon__icon {
       box-shadow: none;
+    }
+  }
+
+  .App-menu_top__left-controls {
+    .zoom-actions,
+    .undo-redo-buttons {
+      pointer-events: var(--ui-pointerEvents);
+    }
+
+    .Island,
+    .zoom-actions {
+      background-color: var(--island-bg-color);
+      box-shadow: var(--shadow-island);
+      border-radius: var(--border-radius-lg);
     }
   }
 

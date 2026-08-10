@@ -25,7 +25,12 @@ import { useAtom, useAtomValue } from "../editor-jotai";
 import { t } from "../i18n";
 import { getScrollToContentState } from "../scene";
 
-import { SelectedShapeActions, CompactShapeActions } from "./Actions";
+import {
+  SelectedShapeActions,
+  CompactShapeActions,
+  ZoomActions,
+  UndoRedoActions,
+} from "./Actions";
 import { LoadingMessage } from "./LoadingMessage";
 import { MobileMenu } from "./MobileMenu";
 import { PasteChartDialog } from "./PasteChartDialog";
@@ -237,6 +242,26 @@ const LayerUI = ({
     </div>
   );
 
+  // Zoom / undo live in the left rail (not footer-left) so they don't collide
+  // with the styles panel + animation bar in the bottom-left corner.
+  const renderLeftRailCanvasControls = () => {
+    const showZoom = zoomUIEnabled && app.isNavigationEnabled();
+    const showUndoRedo = defaultUIEnabled && !appState.viewModeEnabled;
+
+    if (!showZoom && !showUndoRedo) {
+      return null;
+    }
+
+    return (
+      <div className="App-menu_top__left-controls">
+        {showZoom && <ZoomActions renderAction={actionManager.renderAction} />}
+        {showUndoRedo && (
+          <UndoRedoActions renderAction={actionManager.renderAction} />
+        )}
+      </div>
+    );
+  };
+
   const renderSelectedShapeActions = () => {
     return (
       <Section
@@ -251,11 +276,6 @@ const LayerUI = ({
             padding={0}
             data-viewport-ui="side"
             data-viewport-ui-name="stylesPanel"
-            style={{
-              // we want to make sure this doesn't overflow so subtracting the
-              // approximate height of hamburgerMenu + footer
-              maxHeight: `${appState.height - 166}px`,
-            }}
           >
             <CompactShapeActions
               appState={appState}
@@ -269,11 +289,6 @@ const LayerUI = ({
           <Island
             className={CLASSES.SHAPE_ACTIONS_MENU}
             padding={2}
-            style={{
-              // we want to make sure this doesn't overflow so subtracting the
-              // approximate height of hamburgerMenu + footer
-              maxHeight: `${appState.height - 166}px`,
-            }}
             data-viewport-ui="side"
             data-viewport-ui-name="stylesPanel"
           >
@@ -305,7 +320,9 @@ const LayerUI = ({
         <div className="App-menu App-menu_top">
           <Stack.Col
             gap={spacing.menuTopGap}
-            className={clsx("App-menu_top__left")}
+            className={clsx("App-menu_top__left", {
+              "App-menu_top__left--compact": isCompactStylesPanel,
+            })}
           >
             {renderCanvasActions()}
             {defaultUIEnabled && (
@@ -313,6 +330,8 @@ const LayerUI = ({
                 className={clsx("selected-shape-actions-container", {
                   "selected-shape-actions-container--compact":
                     isCompactStylesPanel,
+                  "selected-shape-actions-container--empty":
+                    !shouldRenderSelectedShapeActions,
                 })}
               >
                 {shouldRenderSelectedShapeActions &&
@@ -336,6 +355,7 @@ const LayerUI = ({
                   penDetected={appState.penDetected}
                 />
               )}
+            {renderLeftRailCanvasControls()}
           </Stack.Col>
           {defaultUIEnabled &&
             !appState.viewModeEnabled &&
@@ -621,7 +641,6 @@ const LayerUI = ({
               showExitZenModeBtn={showExitZenModeBtn}
               renderWelcomeScreen={renderWelcomeScreen}
               defaultUIEnabled={defaultUIEnabled}
-              zoomUIEnabled={zoomUIEnabled}
             />
             {(appState.toast ||
               (scrollBackToContentUIEnabled && appState.scrolledOutside)) && (

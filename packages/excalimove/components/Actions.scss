@@ -181,6 +181,9 @@
 .compact-shape-actions-island {
   width: fit-content;
   overflow-x: hidden;
+  overflow-y: auto;
+  max-height: 100%;
+  min-height: 0;
 }
 
 .mobile-shape-actions {

@@ -2,11 +2,8 @@ import clsx from "clsx";
 
 import { actionShortcuts } from "../../actions";
 import { useTunnels } from "../../context/tunnels";
-import { ExitZenModeButton, UndoRedoActions, ZoomActions } from "../Actions";
-import { useApp } from "../App";
+import { ExitZenModeButton } from "../Actions";
 import { HelpButton } from "../HelpButton";
-import { Section } from "../Section";
-import Stack from "../Stack";
 
 import type { ActionManager } from "../../actions/manager";
 import type { UIAppState } from "../../types";
@@ -17,53 +14,22 @@ const Footer = ({
   showExitZenModeBtn,
   renderWelcomeScreen,
   defaultUIEnabled,
-  zoomUIEnabled,
 }: {
   appState: UIAppState;
   actionManager: ActionManager;
   showExitZenModeBtn: boolean;
   renderWelcomeScreen: boolean;
   defaultUIEnabled: boolean;
-  zoomUIEnabled: boolean;
 }) => {
   const { FooterCenterTunnel, FooterRightTunnel, WelcomeScreenHelpHintTunnel } =
     useTunnels();
-  const app = useApp();
 
   return (
     <footer
       role="contentinfo"
       className="layer-ui__wrapper__footer App-menu App-menu_bottom"
     >
-      {(defaultUIEnabled || (zoomUIEnabled && app.isNavigationEnabled())) && (
-        <div
-          className={clsx(
-            "layer-ui__wrapper__footer-left zen-mode-transition",
-            {
-              "layer-ui__wrapper__footer-left--transition-left":
-                appState.zenModeEnabled,
-            },
-          )}
-        >
-          <Stack.Col gap={2}>
-            <Section heading="canvasActions">
-              {zoomUIEnabled && app.isNavigationEnabled() && (
-                <ZoomActions renderAction={actionManager.renderAction} />
-              )}
-
-              {defaultUIEnabled && !appState.viewModeEnabled && (
-                <UndoRedoActions
-                  renderAction={actionManager.renderAction}
-                  className={clsx("zen-mode-transition", {
-                    "layer-ui__wrapper__footer-left--transition-bottom":
-                      appState.zenModeEnabled,
-                  })}
-                />
-              )}
-            </Section>
-          </Stack.Col>
-        </div>
-      )}
+      {/* Zoom / undo live in App-menu_top__left (left styles rail). */}
       <FooterCenterTunnel.Out />
       {(defaultUIEnabled || renderWelcomeScreen) && (
         <div
