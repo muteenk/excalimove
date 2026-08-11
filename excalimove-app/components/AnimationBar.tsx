@@ -36,10 +36,9 @@ import {
 } from "../animation/keyframes";
 import { createEmptyProperties } from "../animation/types";
 
-import {
-  ElementTimeline,
-  type SelectedKeyframe,
-} from "./animation/ElementTimeline";
+import { ElementTimeline } from "./animation/ElementTimeline";
+
+import type { SelectedKeyframe } from "./animation/PropertyTrack";
 
 import "./AnimationBar.scss";
 
