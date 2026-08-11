@@ -1,10 +1,19 @@
-import { CaptureUpdateAction, newElementWith } from "@excalimove/excalimove";
+import { CaptureUpdateAction } from "@excalimove/excalimove";
+import {
+  isElbowArrow,
+  isFreeDrawElement,
+  isLinearElement,
+  isTextElement,
+  newElementWith,
+  rescalePointsInElement,
+} from "@excalimove/element";
 
 import { interpolatePose } from "./interpolate";
 import { trackHasKeyframes } from "./types";
 
-import type { Radians } from "@excalimove/math";
+import type { LocalPoint, Radians } from "@excalimove/math";
 
+import type { NonDeletedExcalidrawElement } from "@excalimove/element/types";
 import type { ExcalidrawImperativeAPI } from "@excalimove/excalimove/types";
 
 import type { TracksByElementId } from "./atoms";
@@ -25,6 +34,60 @@ const clampAppliedValue = (
     default:
       return value;
   }
+};
+
+type ElementUpdates = {
+  x?: number;
+  y?: number;
+  opacity?: number;
+  angle?: Radians;
+  width?: number;
+  height?: number;
+  strokeWidth?: number;
+  fontSize?: number;
+  points?: readonly LocalPoint[];
+};
+
+/**
+ * Lines/arrows/freedraw store geometry in `points`. Setting width/height alone
+ * desyncs the bbox from the path and corrupts the element. Text needs font
+ * scaling when width changes. Elbow arrows must keep angle at 0.
+ */
+const finalizeUpdatesForElementType = (
+  element: NonDeletedExcalidrawElement,
+  updates: ElementUpdates,
+): ElementUpdates => {
+  const next: ElementUpdates = { ...updates };
+
+  if (isElbowArrow(element) && next.angle !== undefined) {
+    delete next.angle;
+  }
+
+  const nextWidth = next.width ?? element.width;
+  const nextHeight = next.height ?? element.height;
+  const widthChanged = next.width !== undefined && next.width !== element.width;
+  const heightChanged =
+    next.height !== undefined && next.height !== element.height;
+
+  if (
+    (isLinearElement(element) || isFreeDrawElement(element)) &&
+    (widthChanged || heightChanged)
+  ) {
+    Object.assign(
+      next,
+      rescalePointsInElement(element, nextWidth, nextHeight, false),
+    );
+  }
+
+  if (isTextElement(element) && widthChanged && element.width > 0) {
+    const scale = nextWidth / element.width;
+    next.fontSize = Math.max(1, element.fontSize * scale);
+    if (!heightChanged) {
+      next.height = Math.max(1, element.height * scale);
+    }
+  }
+
+  return next;
 };
 
 /**
@@ -60,15 +123,7 @@ export const applyTracksToScene = ({
     }
 
     const pose = interpolatePose(track, timeMs);
-    const updates: {
-      x?: number;
-      y?: number;
-      opacity?: number;
-      angle?: Radians;
-      width?: number;
-      height?: number;
-      strokeWidth?: number;
-    } = {};
+    const updates: ElementUpdates = {};
 
     for (const property of Object.keys(pose) as AnimatableProperty[]) {
       const raw = pose[property];
@@ -90,8 +145,16 @@ export const applyTracksToScene = ({
       return element;
     }
 
+    const finalized = finalizeUpdatesForElementType(
+      element as NonDeletedExcalidrawElement,
+      updates,
+    );
+    if (Object.keys(finalized).length === 0) {
+      return element;
+    }
+
     changed = true;
-    return newElementWith(element, updates);
+    return newElementWith(element, finalized);
   });
 
   if (!changed) {
