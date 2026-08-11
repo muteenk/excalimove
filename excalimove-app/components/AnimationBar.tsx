@@ -32,9 +32,14 @@ import {
   recordPoseEdit,
   readElementPose,
   removeKeyframeFromTrack,
+  upsertKeyframe,
+  canDeleteKeyframe,
   type ElementPose,
 } from "../animation/keyframes";
-import { createEmptyProperties } from "../animation/types";
+import {
+  createEmptyProperties,
+  type AnimatableProperty,
+} from "../animation/types";
 
 import { ElementTimeline } from "./animation/ElementTimeline";
 
@@ -52,6 +57,10 @@ const AnimationBar = () => {
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [selectedKeyframe, setSelectedKeyframe] =
     useState<SelectedKeyframe | null>(null);
+  const [copiedKeyframe, setCopiedKeyframe] = useState<{
+    property: AnimatableProperty;
+    value: number;
+  } | null>(null);
   const [tracks, setTracks] = useAtom(animationTracksAtom);
 
   const rootRef = useRef<HTMLDivElement>(null);
@@ -237,6 +246,143 @@ const AnimationBar = () => {
     setSelectedKeyframe(selection);
   }, []);
 
+  const onCopyKeyframe = useCallback(
+    ({ property, value }: { property: AnimatableProperty; value: number }) => {
+      setCopiedKeyframe({ property, value });
+    },
+    [],
+  );
+
+  const onPasteKeyframe = useCallback(
+    (property: AnimatableProperty) => {
+      if (!selectedElement || !copiedKeyframe) {
+        return;
+      }
+      if (copiedKeyframe.property !== property) {
+        return;
+      }
+
+      const elementId = selectedElement.id;
+      const toTimeMs = Math.max(
+        0,
+        Math.min(TIMELINE_DURATION_MS, Math.round(currentTimeMsRef.current)),
+      );
+
+      onSeek(toTimeMs);
+
+      setTracks((currentTracks) => {
+        const track = currentTracks[elementId] ?? {
+          elementId,
+          properties: createEmptyProperties(),
+        };
+
+        const nextKeyframes = upsertKeyframe(
+          track.properties[property],
+          toTimeMs,
+          copiedKeyframe.value,
+        );
+
+        return {
+          ...currentTracks,
+          [elementId]: {
+            ...track,
+            properties: {
+              ...track.properties,
+              [property]: nextKeyframes,
+            },
+          },
+        };
+      });
+
+      setSelectedKeyframe({ property, timeMs: toTimeMs });
+    },
+    [copiedKeyframe, onSeek, selectedElement, setTracks],
+  );
+
+  const onMoveKeyframe = useCallback(
+    ({
+      property,
+      fromTimeMs,
+      toTimeMs,
+      value,
+    }: {
+      property: SelectedKeyframe["property"];
+      fromTimeMs: number;
+      toTimeMs: number;
+      value: number;
+    }) => {
+      if (!selectedElement) {
+        return;
+      }
+
+      const elementId = selectedElement.id;
+      const fromNormalized = Math.max(0, Math.round(fromTimeMs));
+      const toNormalized = Math.max(0, Math.round(toTimeMs));
+
+      setTracks((currentTracks) => {
+        const track = currentTracks[elementId];
+        if (!track) {
+          return currentTracks;
+        }
+
+        const keyframes = track.properties[property];
+        if (!canDeleteKeyframe(keyframes, fromNormalized)) {
+          return currentTracks;
+        }
+
+        const fromIndex = keyframes.findIndex(
+          (kf) => kf.timeMs === fromNormalized,
+        );
+        if (fromIndex === -1) {
+          return currentTracks;
+        }
+
+        if (fromNormalized === toNormalized) {
+          return currentTracks;
+        }
+
+        const movedKeyframe = { timeMs: toNormalized, value };
+
+        // Preserve the array order so we don't cause keyframe list items to
+        // unmount/re-mount during drag. We still enforce uniqueness by
+        // removing any other keyframe at `toNormalized`.
+        const duplicateIndex = keyframes.findIndex(
+          (kf, idx) => idx !== fromIndex && kf.timeMs === toNormalized,
+        );
+
+        const nextKeyframes =
+          duplicateIndex === -1
+            ? keyframes.map((kf, idx) =>
+                idx === fromIndex ? movedKeyframe : kf,
+              )
+            : (() => {
+                const removed = keyframes.filter(
+                  (_, idx) => idx !== duplicateIndex,
+                );
+                const movedIndex =
+                  fromIndex - (duplicateIndex < fromIndex ? 1 : 0);
+                return removed.map((kf, idx) =>
+                  idx === movedIndex ? movedKeyframe : kf,
+                );
+              })();
+
+        return {
+          ...currentTracks,
+          [elementId]: {
+            ...track,
+            properties: {
+              ...track.properties,
+              [property]: nextKeyframes,
+            },
+          },
+        };
+      });
+
+      setSelectedKeyframe({ property, timeMs: toNormalized });
+    },
+    [selectedElement, setTracks],
+  );
+
   const onDeleteSelectedKeyframe = useCallback(() => {
     if (!selectedElement || !selectedKeyframe) {
       return;
@@ -393,9 +539,8 @@ const AnimationBar = () => {
         style={{ height: heightPx }}
         data-viewport-ui="bottom"
       >
-        <div
+        <hr
           className="animation-bar__resize-handle"
-          role="separator"
           aria-orientation="horizontal"
           aria-valuemin={ANIMATION_BAR_MIN_HEIGHT_PX}
           aria-valuenow={heightPx}
@@ -414,6 +559,10 @@ const AnimationBar = () => {
               keyframesByProperty={keyframesByProperty}
               selectedKeyframe={selectedKeyframe}
               onSelectKeyframe={onSelectKeyframe}
+              onMoveKeyframe={onMoveKeyframe}
+              copiedKeyframe={copiedKeyframe}
+              onCopyKeyframe={onCopyKeyframe}
+              onPasteKeyframe={onPasteKeyframe}
               onDeleteSelectedKeyframe={onDeleteSelectedKeyframe}
             />
           ) : (

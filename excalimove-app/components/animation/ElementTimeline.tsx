@@ -26,7 +26,11 @@ import { canDeleteKeyframe } from "../../animation/keyframes";
 
 import { TimelinePlayhead } from "./TimelinePlayhead";
 
-import { PropertyTrack, type SelectedKeyframe } from "./PropertyTrack";
+import {
+  PropertyTrack,
+  type CopiedKeyframe,
+  type SelectedKeyframe,
+} from "./PropertyTrack";
 
 import type { ExcalidrawElement } from "@excalimove/element/types";
 
@@ -112,6 +116,10 @@ export const ElementTimeline = ({
   keyframesByProperty = createEmptyProperties(),
   selectedKeyframe,
   onSelectKeyframe,
+  onMoveKeyframe,
+  copiedKeyframe,
+  onCopyKeyframe,
+  onPasteKeyframe,
   onDeleteSelectedKeyframe,
 }: {
   element: ExcalidrawElement;
@@ -123,6 +131,18 @@ export const ElementTimeline = ({
   keyframesByProperty?: Record<AnimatableProperty, readonly Keyframe[]>;
   selectedKeyframe: SelectedKeyframe | null;
   onSelectKeyframe: (selection: SelectedKeyframe | null) => void;
+  onMoveKeyframe: (args: {
+    property: SelectedKeyframe["property"];
+    fromTimeMs: number;
+    toTimeMs: number;
+    value: number;
+  }) => void;
+  copiedKeyframe: CopiedKeyframe | null;
+  onCopyKeyframe: (args: {
+    property: CopiedKeyframe["property"];
+    value: number;
+  }) => void;
+  onPasteKeyframe: (property: CopiedKeyframe["property"]) => void;
   onDeleteSelectedKeyframe: () => void;
 }) => {
   const [propertiesOpen, setPropertiesOpen] = useState(true);
@@ -138,29 +158,102 @@ export const ElementTimeline = ({
   }, [keyframesByProperty, selectedKeyframe]);
 
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Delete" && event.key !== "Backspace") {
-        return;
+    const isEditableTarget = (target: HTMLElement | null) =>
+      !!target &&
+      (target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable);
+
+    const getSelectedKeyframeValue = () => {
+      if (!selectedKeyframe) {
+        return null;
       }
-      const target = event.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable)
-      ) {
-        return;
-      }
-      if (!canDeleteSelected) {
-        return;
-      }
-      event.preventDefault();
-      onDeleteSelectedKeyframe();
+      const keyframes = keyframesByProperty[selectedKeyframe.property];
+      const timeMs = Math.max(0, Math.round(selectedKeyframe.timeMs));
+      return (
+        keyframes.find((keyframe) => keyframe.timeMs === timeMs)?.value ?? null
+      );
     };
 
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [canDeleteSelected, onDeleteSelectedKeyframe]);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (isEditableTarget(event.target as HTMLElement | null)) {
+        return;
+      }
+
+      // Only steal shortcuts while a keyframe is selected (or we have a
+      // keyframe clipboard for paste). Excalidraw listens on `document` in
+      // the bubble phase, so we must capture + stopPropagation first.
+      const isMod = event.metaKey || event.ctrlKey;
+      const key = event.key.toLowerCase();
+
+      const steal = () => {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+      };
+
+      if (isMod && key === "c") {
+        const value = getSelectedKeyframeValue();
+        if (value == null || !selectedKeyframe) {
+          return;
+        }
+        steal();
+        onCopyKeyframe({ property: selectedKeyframe.property, value });
+        return;
+      }
+
+      if (isMod && key === "x") {
+        if (!selectedKeyframe) {
+          return;
+        }
+        const value = getSelectedKeyframeValue();
+        if (value == null) {
+          return;
+        }
+        // Always consume cut when a keyframe is selected so the canvas
+        // element isn't cut instead.
+        steal();
+        onCopyKeyframe({ property: selectedKeyframe.property, value });
+        if (canDeleteSelected) {
+          onDeleteSelectedKeyframe();
+        }
+        return;
+      }
+
+      if (isMod && key === "v") {
+        if (!copiedKeyframe) {
+          return;
+        }
+        steal();
+        onPasteKeyframe(copiedKeyframe.property);
+        return;
+      }
+
+      if (event.key === "Delete" || event.key === "Backspace") {
+        if (!selectedKeyframe) {
+          return;
+        }
+        // Always consume delete/backspace when a keyframe is selected so the
+        // canvas element isn't deleted instead.
+        steal();
+        if (canDeleteSelected) {
+          onDeleteSelectedKeyframe();
+        }
+      }
+    };
+
+    // Capture phase so we run before Excalidraw's document bubble handler.
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
+  }, [
+    canDeleteSelected,
+    copiedKeyframe,
+    keyframesByProperty,
+    onCopyKeyframe,
+    onDeleteSelectedKeyframe,
+    onPasteKeyframe,
+    selectedKeyframe,
+  ]);
 
   return (
     <div className="animation-timeline">
@@ -190,7 +283,7 @@ export const ElementTimeline = ({
             {getElementLabel(element)}
           </span>
           <span className="animation-timeline__element-hint">
-            Edit properties on canvas to keyframe at the playhead · Delete
+            Edit on canvas to keyframe · ⌘/Ctrl+C/X/V copy/cut/paste · Delete
             removes selected
           </span>
         </div>
@@ -223,6 +316,7 @@ export const ElementTimeline = ({
               selectedKeyframe={selectedKeyframe}
               onSelectKeyframe={onSelectKeyframe}
               onSeek={onSeek}
+              onMoveKeyframe={onMoveKeyframe}
             />
           ))}
           <TimelinePlayhead
